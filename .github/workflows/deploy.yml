@@ -1,0 +1,55 @@
+name: Deploy TNS to Lightsail
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ${{ secrets.LIGHTSAIL_USERNAME }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          script_stop: true
+          script: |
+            bash -l -c '
+              set -e
+
+              TNS_DIR=~/tessera-notification-system
+
+              # First deploy: clone if directory does not exist
+              if [ ! -d "$TNS_DIR" ]; then
+                echo "First deploy — cloning repository..."
+                git clone https://github.com/Jmjkruger/tessera-notification-system.git "$TNS_DIR"
+              fi
+
+              cd "$TNS_DIR"
+
+              echo "Resetting local changes..."
+              git reset --hard HEAD
+
+              echo "Pulling latest code..."
+              git pull origin main
+
+              echo "Installing dependencies..."
+              npm ci --omit=dev
+
+              echo "Restarting TNS..."
+              pm2 describe tessera-tns > /dev/null 2>&1 && pm2 restart tessera-tns || pm2 start ecosystem.config.js
+              pm2 save
+
+              echo "============================"
+              echo "   TNS DEPLOY SUCCESS       "
+              echo "============================"
+              echo "Version: $(node -p "require(\"./package.json\").version")"
+              echo "Time: $(date)"
+              echo "============================"
+            '

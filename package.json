@@ -1,0 +1,22 @@
+{
+  "name": "tessera-notification-system",
+  "version": "0.1.0",
+  "description": "Tessera Notification System — standalone email service for comp ticket delivery via AWS SES",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "author": "Tessera",
+  "license": "PRIVATE",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sesv2": "^3.993.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "handlebars": "^4.7.8",
+    "qrcode": "^1.5.4"
+  }
+}

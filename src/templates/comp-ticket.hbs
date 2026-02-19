@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Complimentary Ticket — {{eventName}}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f8f9fa; font-family:'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; -webkit-font-smoothing:antialiased;">
+
+  <!-- Outer wrapper -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8f9fa;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+
+        <!-- Email container -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px; background-color:#ffffff; border-radius:12px; border:1px solid #e5e7eb; overflow:hidden;">
+
+          <!-- Logo header -->
+          <tr>
+            <td align="center" style="padding:28px 24px 16px;">
+              <img src="{{logoSrc}}" alt="Tessera" width="160" style="display:block; max-width:160px; height:auto;" />
+            </td>
+          </tr>
+
+          <!-- Event image -->
+          {{#if eventImageUrl}}
+          <tr>
+            <td style="padding:0 24px 16px;">
+              <img src="{{eventImageUrl}}" alt="{{eventName}}" width="512" style="display:block; width:100%; max-width:512px; height:auto; border-radius:8px; object-fit:cover;" />
+            </td>
+          </tr>
+          {{/if}}
+
+          <!-- Greeting -->
+          <tr>
+            <td style="padding:8px 24px 4px;">
+              <h1 style="margin:0; font-size:20px; font-weight:700; color:#1f2937; line-height:1.3;">
+                You've received a complimentary ticket!
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:4px 24px 20px;">
+              <p style="margin:0; font-size:14px; color:#6b7280; line-height:1.5;">
+                You've been sent a complimentary ticket to <strong style="color:#1f2937;">{{eventName}}</strong>. Your ticket details are below.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Ticket card -->
+          <tr>
+            <td style="padding:0 24px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8f9fa; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
+
+                <!-- Ticket type accent bar -->
+                <tr>
+                  <td style="background-color:#F05A28; height:4px; font-size:0; line-height:0;">&nbsp;</td>
+                </tr>
+
+                <!-- Ticket body -->
+                <tr>
+                  <td style="padding:20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <!-- Ticket info -->
+                        <td style="vertical-align:top; padding-right:16px;">
+                          <p style="margin:0 0 2px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#9ca3af;">
+                            Ticket Type
+                          </p>
+                          <p style="margin:0 0 14px; font-size:16px; font-weight:700; color:#1f2937;">
+                            {{ticketType}}
+                          </p>
+
+                          <p style="margin:0 0 2px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#9ca3af;">
+                            Attendee
+                          </p>
+                          <p style="margin:0 0 14px; font-size:14px; font-weight:600; color:#1f2937;">
+                            {{attendeeName}}
+                          </p>
+
+                          {{#if eventDate}}
+                          <p style="margin:0 0 2px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#9ca3af;">
+                            Date &amp; Time
+                          </p>
+                          <p style="margin:0 0 14px; font-size:14px; color:#1f2937;">
+                            {{eventDate}}{{#if eventTime}} &middot; {{eventTime}}{{/if}}
+                          </p>
+                          {{/if}}
+
+                          {{#if eventVenue}}
+                          <p style="margin:0 0 2px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#9ca3af;">
+                            Venue
+                          </p>
+                          <p style="margin:0; font-size:14px; color:#1f2937;">
+                            {{eventVenue}}
+                          </p>
+                          {{/if}}
+                        </td>
+
+                        <!-- QR code -->
+                        <td width="130" style="vertical-align:top; text-align:center;">
+                          <div style="background-color:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:10px; display:inline-block;">
+                            <img src="{{qrCodeSrc}}" alt="Ticket QR Code" width="110" height="110" style="display:block; width:110px; height:110px;" />
+                          </div>
+                          <p style="margin:6px 0 0; font-size:10px; color:#9ca3af; text-align:center;">
+                            Scan at entry
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Present this email note -->
+          <tr>
+            <td style="padding:0 24px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:rgba(240, 90, 40, 0.04); border:1px solid rgba(240, 90, 40, 0.15); border-radius:8px;">
+                <tr>
+                  <td style="padding:14px 16px;">
+                    <p style="margin:0; font-size:13px; color:#1f2937; line-height:1.5;">
+                      <strong>Present this email at the event.</strong> Show the QR code above at the entrance for scanning. Keep this email safe — it is your ticket.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 24px;">
+              <hr style="border:none; border-top:1px solid #e5e7eb; margin:0;" />
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 24px 24px;">
+              <p style="margin:0; font-size:12px; color:#9ca3af; line-height:1.5; text-align:center;">
+                This is an automated message from <strong style="color:#6b7280;">Tessera Tickets</strong>.<br />
+                If you believe you received this in error, please contact the event organizer.
+              </p>
+              <p style="margin:12px 0 0; font-size:11px; color:#d1d5db; text-align:center;">
+                &copy; {{year}} Tessera &middot; Event Ticketing Platform
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
