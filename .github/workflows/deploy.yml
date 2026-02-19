@@ -25,19 +25,25 @@ jobs:
 
               TNS_DIR=~/tessera-notification-system
 
-              # First deploy: clone if directory does not exist
-              if [ ! -d "$TNS_DIR" ]; then
+              # First deploy: clone if .git does not exist (directory may exist with just .env)
+              if [ ! -d "$TNS_DIR/.git" ]; then
                 echo "First deploy — cloning repository..."
+                # Preserve .env if it exists
+                if [ -f "$TNS_DIR/.env" ]; then
+                  cp "$TNS_DIR/.env" /tmp/tns-env-backup
+                fi
+                rm -rf "$TNS_DIR"
                 git clone https://github.com/Jmjkruger/tessera-notification-system.git "$TNS_DIR"
+                if [ -f /tmp/tns-env-backup ]; then
+                  mv /tmp/tns-env-backup "$TNS_DIR/.env"
+                fi
               fi
 
               cd "$TNS_DIR"
 
-              echo "Resetting local changes..."
-              git reset --hard HEAD
-
               echo "Pulling latest code..."
-              git pull origin main
+              git fetch origin main
+              git reset --hard origin/main
 
               echo "Installing dependencies..."
               npm ci --omit=dev
