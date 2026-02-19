@@ -25,17 +25,13 @@ function getTemplate() {
 
 /**
  * Render the comp ticket email HTML.
- *
- * @param {object} params
- * @param {object} params.event       - { name, date, time, venue, image_url }
- * @param {object} params.ticket      - { attendee_first_name, attendee_last_name, ticket_type }
- * @param {string} params.qrDataUrl   - QR code as data URL
+ * Logo and QR code use cid: references — the actual image data
+ * is attached as inline MIME parts by the SES client.
  */
-function renderCompTicketEmail({ event, ticket, qrDataUrl }) {
+function renderCompTicketEmail({ event, ticket }) {
   const template = getTemplate();
 
   return template({
-    logoSrc: getLogoBase64(),
     eventName: event.name,
     eventDate: event.date || '',
     eventTime: event.time || '',
@@ -43,9 +39,22 @@ function renderCompTicketEmail({ event, ticket, qrDataUrl }) {
     eventImageUrl: event.image_url || '',
     attendeeName: [ticket.attendee_first_name, ticket.attendee_last_name].filter(Boolean).join(' '),
     ticketType: ticket.ticket_type || 'General',
-    qrCodeSrc: qrDataUrl,
     year: new Date().getFullYear(),
   });
 }
 
-module.exports = { renderCompTicketEmail };
+/**
+ * Get the raw logo PNG buffer and base64 for CID attachment.
+ */
+function getLogoAttachment() {
+  const logoPath = path.join(__dirname, '..', 'assets', 'tessera-logo.png');
+  const logoBuffer = fs.readFileSync(logoPath);
+  return {
+    cid: 'tessera-logo',
+    base64: logoBuffer.toString('base64'),
+    contentType: 'image/png',
+    filename: 'tessera-logo.png',
+  };
+}
+
+module.exports = { renderCompTicketEmail, getLogoAttachment };

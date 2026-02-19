@@ -1,7 +1,7 @@
 const { sendTicketEmail } = require('./sesClient');
 const { updateTicketEmailStatus } = require('./wpClient');
 const { generateQR } = require('./qrGenerator');
-const { renderCompTicketEmail } = require('./templateEngine');
+const { renderCompTicketEmail, getLogoAttachment } = require('./templateEngine');
 
 const CONCURRENCY = 3;
 const MAX_RETRIES = 3;
@@ -41,18 +41,26 @@ async function processJob(job) {
   const ticketLabel = `ticket #${ticket.ticket_id} (${ticket.attendee_email})`;
 
   try {
-    const qrDataUrl = await generateQR(ticket.barcode || `TESS-${ticket.ticket_id}`);
+    const qrBase64 = await generateQR(ticket.barcode || `TESS-${ticket.ticket_id}`);
 
-    const html = renderCompTicketEmail({
-      event,
-      ticket,
-      qrDataUrl,
-    });
+    const html = renderCompTicketEmail({ event, ticket });
+
+    const logoAttachment = getLogoAttachment();
+    const inlineImages = [
+      logoAttachment,
+      {
+        cid: 'qrcode',
+        base64: qrBase64,
+        contentType: 'image/png',
+        filename: 'qrcode.png',
+      },
+    ];
 
     await sendTicketEmail({
       to: ticket.attendee_email,
       subject: `Your complimentary ticket for ${event.name}`,
       html,
+      inlineImages,
     });
 
     await updateTicketEmailStatus(ticket.ticket_id, 'sent', comp_post_id, wp_api_url);

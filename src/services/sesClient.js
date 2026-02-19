@@ -16,9 +16,47 @@ function getClient() {
 }
 
 /**
- * Send an HTML email via AWS SES.
+ * Build a raw MIME message with inline CID attachments for images.
+ * Email clients display CID images inline, unlike base64 data URIs which get blocked.
  */
-async function sendTicketEmail({ to, subject, html }) {
+function buildRawMime({ from, to, subject, html, inlineImages }) {
+  const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+  let mime = '';
+  mime += `From: ${from}\r\n`;
+  mime += `To: ${to}\r\n`;
+  mime += `Subject: ${subject}\r\n`;
+  mime += `MIME-Version: 1.0\r\n`;
+  mime += `Content-Type: multipart/related; boundary="${boundary}"\r\n\r\n`;
+
+  mime += `--${boundary}\r\n`;
+  mime += `Content-Type: text/html; charset=UTF-8\r\n`;
+  mime += `Content-Transfer-Encoding: 7bit\r\n\r\n`;
+  mime += `${html}\r\n`;
+
+  for (const img of inlineImages) {
+    mime += `--${boundary}\r\n`;
+    mime += `Content-Type: ${img.contentType}\r\n`;
+    mime += `Content-Transfer-Encoding: base64\r\n`;
+    mime += `Content-ID: <${img.cid}>\r\n`;
+    mime += `Content-Disposition: inline; filename="${img.filename}"\r\n\r\n`;
+    mime += `${img.base64}\r\n`;
+  }
+
+  mime += `--${boundary}--\r\n`;
+  return mime;
+}
+
+/**
+ * Send an HTML email via AWS SES with inline CID images.
+ *
+ * @param {object} opts
+ * @param {string} opts.to
+ * @param {string} opts.subject
+ * @param {string} opts.html - HTML with cid: references (e.g. src="cid:qrcode")
+ * @param {Array}  opts.inlineImages - [{ cid, base64, contentType, filename }]
+ */
+async function sendTicketEmail({ to, subject, html, inlineImages = [] }) {
   const senderName = process.env.SES_SENDER_NAME || 'Tessera Tickets';
   const senderEmail = process.env.SES_SENDER_EMAIL;
 
@@ -26,8 +64,23 @@ async function sendTicketEmail({ to, subject, html }) {
     throw new Error('SES_SENDER_EMAIL not configured');
   }
 
+  const from = `${senderName} <${senderEmail}>`;
+
+  if (inlineImages.length > 0) {
+    const rawMessage = buildRawMime({ from, to, subject, html, inlineImages });
+    const command = new SendEmailCommand({
+      FromEmailAddress: senderEmail,
+      Destination: { ToAddresses: [to] },
+      Content: {
+        Raw: { Data: Buffer.from(rawMessage) },
+      },
+    });
+    const result = await getClient().send(command);
+    return result.MessageId;
+  }
+
   const command = new SendEmailCommand({
-    FromEmailAddress: `${senderName} <${senderEmail}>`,
+    FromEmailAddress: from,
     Destination: { ToAddresses: [to] },
     Content: {
       Simple: {
