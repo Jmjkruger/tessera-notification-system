@@ -1,5 +1,5 @@
 const { sendTicketEmail } = require('./sesClient');
-const { updateTicketEmailStatus, updateBatchStatus } = require('./wpClient');
+const { updateTicketEmailStatus } = require('./wpClient');
 const { generateQR } = require('./qrGenerator');
 const { renderCompTicketEmail } = require('./templateEngine');
 
@@ -15,9 +15,9 @@ function getQueueStats() {
   return { ...stats, pending: queue.length, activeWorkers };
 }
 
-function enqueueBatch({ comp_post_id, event, tickets }) {
+function enqueueBatch({ comp_post_id, event, tickets, wp_api_url }) {
   for (const ticket of tickets) {
-    queue.push({ comp_post_id, event, ticket, retries: 0 });
+    queue.push({ comp_post_id, event, ticket, wp_api_url, retries: 0 });
     stats.queued++;
   }
   drainQueue();
@@ -37,7 +37,7 @@ async function drainQueue() {
 }
 
 async function processJob(job) {
-  const { comp_post_id, event, ticket } = job;
+  const { comp_post_id, event, ticket, wp_api_url } = job;
   const ticketLabel = `ticket #${ticket.ticket_id} (${ticket.attendee_email})`;
 
   try {
@@ -55,7 +55,7 @@ async function processJob(job) {
       html,
     });
 
-    await updateTicketEmailStatus(ticket.ticket_id, 'sent', comp_post_id);
+    await updateTicketEmailStatus(ticket.ticket_id, 'sent', comp_post_id, wp_api_url);
     stats.sent++;
     console.log(`[TNS] Sent ${ticketLabel} for batch #${comp_post_id}`);
   } catch (err) {
@@ -73,7 +73,7 @@ async function processJob(job) {
       console.error(`[TNS] Exhausted retries for ${ticketLabel}`);
       stats.failed++;
       try {
-        await updateTicketEmailStatus(ticket.ticket_id, 'failed', comp_post_id);
+        await updateTicketEmailStatus(ticket.ticket_id, 'failed', comp_post_id, wp_api_url);
       } catch (updateErr) {
         console.error(`[TNS] Failed to update status for ${ticketLabel}:`, updateErr.message);
       }

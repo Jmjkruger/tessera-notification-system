@@ -1,19 +1,23 @@
 /**
  * WordPress REST API client for updating ticket email status.
  * Calls back to the WP plugin's TNS status endpoint.
+ *
+ * Accepts an optional baseUrl override per-batch (sent by WP in the webhook payload).
+ * Falls back to WP_API_URL from .env if not provided.
  */
 
-const WP_API_URL = () => process.env.WP_API_URL;
-const TNS_API_KEY = () => process.env.TNS_API_KEY;
+const getDefaultBaseUrl = () => process.env.WP_API_URL;
+const getApiKey = () => process.env.TNS_API_KEY;
 
-async function updateTicketEmailStatus(ticketId, status, compPostId) {
-  const url = `${WP_API_URL()}/tessera/v1/tns/update-status`;
+async function updateTicketEmailStatus(ticketId, status, compPostId, baseUrl) {
+  const wpUrl = baseUrl || getDefaultBaseUrl();
+  const url = `${wpUrl}/tessera/v1/tns/update-status`;
 
   const res = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-TNS-Key': TNS_API_KEY(),
+      'X-TNS-Key': getApiKey(),
     },
     body: JSON.stringify({
       ticket_id: ticketId,
@@ -32,12 +36,13 @@ async function updateTicketEmailStatus(ticketId, status, compPostId) {
 
 /**
  * Fetch batches stuck in 'sending' status for catch-up processing.
+ * Always uses the .env base URL (catch-up is not per-batch).
  */
 async function fetchPendingBatches() {
-  const url = `${WP_API_URL()}/tessera/v1/tns/pending-batches`;
+  const url = `${getDefaultBaseUrl()}/tessera/v1/tns/pending-batches`;
 
   const res = await fetch(url, {
-    headers: { 'X-TNS-Key': TNS_API_KEY() },
+    headers: { 'X-TNS-Key': getApiKey() },
   });
 
   if (!res.ok) {

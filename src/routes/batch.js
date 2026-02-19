@@ -10,7 +10,7 @@ const router = Router();
  */
 router.post('/send-batch', async (req, res) => {
   try {
-    const { comp_post_id, event, tickets } = req.body;
+    const { comp_post_id, event, tickets, wp_api_url } = req.body;
 
     if (!comp_post_id || !event || !Array.isArray(tickets) || tickets.length === 0) {
       return res.status(400).json({
@@ -22,9 +22,9 @@ router.post('/send-batch', async (req, res) => {
       return res.status(400).json({ error: 'Event must include id and name' });
     }
 
-    console.log(`[TNS] Received batch #${comp_post_id}: ${tickets.length} ticket(s) for "${event.name}"`);
+    console.log(`[TNS] Received batch #${comp_post_id}: ${tickets.length} ticket(s) for "${event.name}"${wp_api_url ? ` (callback: ${wp_api_url})` : ''}`);
 
-    enqueueBatch({ comp_post_id, event, tickets });
+    enqueueBatch({ comp_post_id, event, tickets, wp_api_url });
 
     res.status(202).json({
       accepted: true,
@@ -45,7 +45,7 @@ router.post('/send-batch', async (req, res) => {
  */
 router.post('/retry-batch', async (req, res) => {
   try {
-    const { comp_post_id, event, tickets } = req.body;
+    const { comp_post_id, event, tickets, wp_api_url } = req.body;
 
     if (!comp_post_id || !event || !Array.isArray(tickets) || tickets.length === 0) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -58,7 +58,7 @@ router.post('/retry-batch', async (req, res) => {
 
     console.log(`[TNS] Retry batch #${comp_post_id}: ${failedOnly.length} ticket(s)`);
 
-    enqueueBatch({ comp_post_id, event, tickets: failedOnly });
+    enqueueBatch({ comp_post_id, event, tickets: failedOnly, wp_api_url });
 
     res.status(202).json({
       accepted: true,
