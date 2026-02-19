@@ -28,12 +28,16 @@ function getNotificationTemplate() {
  * Each ticket object needs: { attendeeName, ticketType }
  * QR codes use cid:qrcode-0, cid:qrcode-1, etc.
  */
-function renderCompTicketEmail({ event, tickets }) {
+function renderCompTicketEmail({ event, tickets, combinedPdfUrl }) {
   const template = getTicketTemplate();
 
   const ticketData = tickets.map(t => ({
     attendeeName: [t.attendee_first_name, t.attendee_last_name].filter(Boolean).join(' '),
     ticketType: t.ticket_type || 'General',
+    attendeePhone: t.attendee_phone || '',
+    customFields: (t.custom_fields || []).filter(f => f.label && f.value),
+    hasCustomFields: (t.custom_fields || []).some(f => f.label && f.value),
+    pdfUrl: t.pdfUrl || '',
   }));
 
   return template({
@@ -45,6 +49,7 @@ function renderCompTicketEmail({ event, tickets }) {
     tickets: ticketData,
     ticketCount: ticketData.length,
     multipleTickets: ticketData.length > 1,
+    combinedPdfUrl: combinedPdfUrl || '',
     year: new Date().getFullYear(),
   });
 }

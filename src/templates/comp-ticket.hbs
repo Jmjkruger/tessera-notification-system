@@ -91,9 +91,29 @@
                           <p style="margin:0 0 2px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#9ca3af;">
                             Venue
                           </p>
-                          <p style="margin:0; font-size:14px; color:#1f2937;">
+                          <p style="margin:0 0 12px; font-size:14px; color:#1f2937;">
                             {{../eventVenue}}
                           </p>
+                          {{/if}}
+
+                          {{#if this.attendeePhone}}
+                          <p style="margin:0 0 2px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#9ca3af;">
+                            Phone
+                          </p>
+                          <p style="margin:0 0 12px; font-size:14px; color:#1f2937;">
+                            {{this.attendeePhone}}
+                          </p>
+                          {{/if}}
+
+                          {{#if this.hasCustomFields}}
+                          {{#each this.customFields}}
+                          <p style="margin:0 0 2px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#9ca3af;">
+                            {{this.label}}
+                          </p>
+                          <p style="margin:0 0 12px; font-size:14px; color:#1f2937;">
+                            {{this.value}}
+                          </p>
+                          {{/each}}
                           {{/if}}
                         </td>
                       </tr>
@@ -112,10 +132,45 @@
                     </p>
                   </td>
                 </tr>
+
+                {{#if this.pdfUrl}}
+                <!-- Download PDF button -->
+                <tr>
+                  <td align="center" style="padding:0 20px 20px;">
+                    <a href="{{this.pdfUrl}}" target="_blank" style="display:inline-block; padding:10px 24px; background-color:#F05A28; color:#ffffff; font-size:13px; font-weight:600; text-decoration:none; border-radius:6px; letter-spacing:0.02em;">
+                      &#128196; Download Ticket PDF
+                    </a>
+                  </td>
+                </tr>
+                {{/if}}
               </table>
             </td>
           </tr>
           {{/each}}
+
+          {{#if combinedPdfUrl}}
+          <!-- Download buttons section (multiple tickets) -->
+          <tr>
+            <td align="center" style="padding:0 24px 24px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                <tr>
+                  <td align="center" style="padding-bottom:10px;">
+                    <a href="{{combinedPdfUrl}}" target="_blank" style="display:inline-block; padding:12px 28px; background-color:#F05A28; color:#ffffff; font-size:14px; font-weight:700; text-decoration:none; border-radius:8px; letter-spacing:0.02em;">
+                      &#128196; Download All Tickets (1 PDF)
+                    </a>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center">
+                    <p style="margin:0; font-size:11px; color:#9ca3af;">
+                      Or download individual tickets using the buttons on each ticket above
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          {{/if}}
 
           <!-- Present this email note -->
           <tr>

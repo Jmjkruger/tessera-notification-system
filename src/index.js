@@ -3,6 +3,7 @@ const express = require('express');
 const healthRoutes = require('./routes/health');
 const batchRoutes = require('./routes/batch');
 const notifyRoutes = require('./routes/notify');
+const { router: pdfRoutes } = require('./routes/pdf');
 const { authMiddleware } = require('./middleware/auth');
 const { startCatchupLoop } = require('./services/catchup');
 
@@ -12,6 +13,7 @@ const PORT = process.env.PORT || 3002;
 app.use(express.json({ limit: '5mb' }));
 
 app.use('/api', healthRoutes);
+app.use('/api', pdfRoutes);
 app.use('/api', authMiddleware, batchRoutes);
 app.use('/api', authMiddleware, notifyRoutes);
 

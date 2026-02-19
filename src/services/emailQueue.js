@@ -2,6 +2,7 @@ const { sendTicketEmail } = require('./sesClient');
 const { updateTicketEmailStatus } = require('./wpClient');
 const { generateQR } = require('./qrGenerator');
 const { renderCompTicketEmail, getLogoAttachment } = require('./templateEngine');
+const { generateSignature } = require('../routes/pdf');
 
 const CONCURRENCY = 3;
 const MAX_RETRIES = 3;
@@ -64,7 +65,23 @@ async function processJob(job) {
       });
     }
 
-    const html = renderCompTicketEmail({ event, tickets });
+    const tnsPublicUrl = process.env.TNS_PUBLIC_URL || '';
+    const ticketsWithPdf = tickets.map(t => {
+      if (tnsPublicUrl) {
+        const sig = generateSignature(String(t.ticket_id));
+        t.pdfUrl = `${tnsPublicUrl}/api/ticket-pdf/${t.ticket_id}?sig=${sig}`;
+      }
+      return t;
+    });
+
+    let combinedPdfUrl = '';
+    if (tnsPublicUrl && tickets.length > 1) {
+      const sortedIds = tickets.map(t => String(t.ticket_id)).sort();
+      const combinedSig = generateSignature(sortedIds.join(','));
+      combinedPdfUrl = `${tnsPublicUrl}/api/tickets-pdf?ids=${sortedIds.join(',')}&sig=${combinedSig}`;
+    }
+
+    const html = renderCompTicketEmail({ event, tickets: ticketsWithPdf, combinedPdfUrl });
 
     const inlineImages = [getLogoAttachment(), ...qrAttachments];
 
