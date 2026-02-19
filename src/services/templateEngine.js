@@ -2,34 +2,39 @@ const Handlebars = require('handlebars');
 const fs = require('fs');
 const path = require('path');
 
-let compiledTemplate = null;
-let logoBase64 = null;
+let compiledTicketTemplate = null;
+let compiledNotificationTemplate = null;
 
-function getLogoBase64() {
-  if (!logoBase64) {
-    const logoPath = path.join(__dirname, '..', 'assets', 'tessera-logo.png');
-    const logoBuffer = fs.readFileSync(logoPath);
-    logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
-  }
-  return logoBase64;
-}
-
-function getTemplate() {
-  if (!compiledTemplate) {
+function getTicketTemplate() {
+  if (!compiledTicketTemplate) {
     const templatePath = path.join(__dirname, '..', 'templates', 'comp-ticket.hbs');
     const source = fs.readFileSync(templatePath, 'utf-8');
-    compiledTemplate = Handlebars.compile(source);
+    compiledTicketTemplate = Handlebars.compile(source);
   }
-  return compiledTemplate;
+  return compiledTicketTemplate;
+}
+
+function getNotificationTemplate() {
+  if (!compiledNotificationTemplate) {
+    const templatePath = path.join(__dirname, '..', 'templates', 'notification.hbs');
+    const source = fs.readFileSync(templatePath, 'utf-8');
+    compiledNotificationTemplate = Handlebars.compile(source);
+  }
+  return compiledNotificationTemplate;
 }
 
 /**
- * Render the comp ticket email HTML.
- * Logo and QR code use cid: references — the actual image data
- * is attached as inline MIME parts by the SES client.
+ * Render the comp ticket email HTML for one or more tickets to the same recipient.
+ * Each ticket object needs: { attendeeName, ticketType }
+ * QR codes use cid:qrcode-0, cid:qrcode-1, etc.
  */
-function renderCompTicketEmail({ event, ticket }) {
-  const template = getTemplate();
+function renderCompTicketEmail({ event, tickets }) {
+  const template = getTicketTemplate();
+
+  const ticketData = tickets.map(t => ({
+    attendeeName: [t.attendee_first_name, t.attendee_last_name].filter(Boolean).join(' '),
+    ticketType: t.ticket_type || 'General',
+  }));
 
   return template({
     eventName: event.name,
@@ -37,15 +42,24 @@ function renderCompTicketEmail({ event, ticket }) {
     eventTime: event.time || '',
     eventVenue: event.venue || '',
     eventImageUrl: event.image_url || '',
-    attendeeName: [ticket.attendee_first_name, ticket.attendee_last_name].filter(Boolean).join(' '),
-    ticketType: ticket.ticket_type || 'General',
+    tickets: ticketData,
+    ticketCount: ticketData.length,
+    multipleTickets: ticketData.length > 1,
     year: new Date().getFullYear(),
   });
 }
 
 /**
- * Get the raw logo PNG buffer and base64 for CID attachment.
+ * Render a branded notification email (approval/denial/admin alerts).
  */
+function renderNotificationEmail(data) {
+  const template = getNotificationTemplate();
+  return template({
+    ...data,
+    year: new Date().getFullYear(),
+  });
+}
+
 function getLogoAttachment() {
   const logoPath = path.join(__dirname, '..', 'assets', 'tessera-logo.png');
   const logoBuffer = fs.readFileSync(logoPath);
@@ -57,4 +71,4 @@ function getLogoAttachment() {
   };
 }
 
-module.exports = { renderCompTicketEmail, getLogoAttachment };
+module.exports = { renderCompTicketEmail, renderNotificationEmail, getLogoAttachment };

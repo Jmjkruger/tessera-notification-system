@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Your Complimentary Ticket — {{eventName}}</title>
+  <title>Your Complimentary Ticket{{#if multipleTickets}}s{{/if}} — {{eventName}}</title>
 </head>
 <body style="margin:0; padding:0; background-color:#f8f9fa; font-family:'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; -webkit-font-smoothing:antialiased;">
 
@@ -35,84 +35,87 @@
           <tr>
             <td style="padding:8px 24px 4px;">
               <h1 style="margin:0; font-size:20px; font-weight:700; color:#1f2937; line-height:1.3;">
-                You've received a complimentary ticket!
+                You've received {{#if multipleTickets}}complimentary tickets!{{else}}a complimentary ticket!{{/if}}
               </h1>
             </td>
           </tr>
           <tr>
             <td style="padding:4px 24px 20px;">
               <p style="margin:0; font-size:14px; color:#6b7280; line-height:1.5;">
-                You've been sent a complimentary ticket to <strong style="color:#1f2937;">{{eventName}}</strong>. Your ticket details are below.
+                You've been sent {{#if multipleTickets}}{{ticketCount}} complimentary tickets{{else}}a complimentary ticket{{/if}} to <strong style="color:#1f2937;">{{eventName}}</strong>. Your ticket details are below.
               </p>
             </td>
           </tr>
 
-          <!-- Ticket card -->
+          <!-- Ticket cards -->
+          {{#each tickets}}
           <tr>
-            <td style="padding:0 24px 24px;">
+            <td style="padding:0 24px {{#if @last}}24px{{else}}12px{{/if}};">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8f9fa; border:1px solid #e5e7eb; border-radius:12px; overflow:hidden;">
 
-                <!-- Ticket type accent bar -->
+                <!-- Ticket accent bar -->
                 <tr>
                   <td style="background-color:#F05A28; height:4px; font-size:0; line-height:0;">&nbsp;</td>
                 </tr>
 
-                <!-- Ticket body -->
+                <!-- Ticket details -->
                 <tr>
                   <td style="padding:20px;">
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <!-- Ticket info -->
-                        <td style="vertical-align:top; padding-right:16px;">
+                        <td style="vertical-align:top;">
                           <p style="margin:0 0 2px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#9ca3af;">
                             Ticket Type
                           </p>
-                          <p style="margin:0 0 14px; font-size:16px; font-weight:700; color:#1f2937;">
-                            {{ticketType}}
+                          <p style="margin:0 0 12px; font-size:16px; font-weight:700; color:#1f2937;">
+                            {{this.ticketType}}
                           </p>
 
                           <p style="margin:0 0 2px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#9ca3af;">
                             Attendee
                           </p>
-                          <p style="margin:0 0 14px; font-size:14px; font-weight:600; color:#1f2937;">
-                            {{attendeeName}}
+                          <p style="margin:0 0 12px; font-size:14px; font-weight:600; color:#1f2937;">
+                            {{this.attendeeName}}
                           </p>
 
-                          {{#if eventDate}}
+                          {{#if ../eventDate}}
                           <p style="margin:0 0 2px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#9ca3af;">
                             Date &amp; Time
                           </p>
-                          <p style="margin:0 0 14px; font-size:14px; color:#1f2937;">
-                            {{eventDate}}{{#if eventTime}} &middot; {{eventTime}}{{/if}}
+                          <p style="margin:0 0 12px; font-size:14px; color:#1f2937;">
+                            {{../eventDate}}{{#if ../eventTime}} &middot; {{../eventTime}}{{/if}}
                           </p>
                           {{/if}}
 
-                          {{#if eventVenue}}
+                          {{#if ../eventVenue}}
                           <p style="margin:0 0 2px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:#9ca3af;">
                             Venue
                           </p>
                           <p style="margin:0; font-size:14px; color:#1f2937;">
-                            {{eventVenue}}
+                            {{../eventVenue}}
                           </p>
                           {{/if}}
-                        </td>
-
-                        <!-- QR code -->
-                        <td width="130" style="vertical-align:top; text-align:center;">
-                          <div style="background-color:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:10px; display:inline-block;">
-                            <img src="cid:qrcode" alt="Ticket QR Code" width="110" height="110" style="display:block; width:110px; height:110px;" />
-                          </div>
-                          <p style="margin:6px 0 0; font-size:10px; color:#9ca3af; text-align:center;">
-                            Scan at entry
-                          </p>
                         </td>
                       </tr>
                     </table>
                   </td>
                 </tr>
+
+                <!-- QR code (stacked below details for mobile compatibility) -->
+                <tr>
+                  <td align="center" style="padding:0 20px 20px;">
+                    <div style="background-color:#ffffff; border:1px solid #e5e7eb; border-radius:8px; padding:12px; display:inline-block;">
+                      <img src="cid:qrcode-{{@index}}" alt="Ticket QR Code" width="140" height="140" style="display:block; width:140px; height:140px;" />
+                    </div>
+                    <p style="margin:8px 0 0; font-size:10px; color:#9ca3af; text-align:center;">
+                      Scan at entry
+                    </p>
+                  </td>
+                </tr>
               </table>
             </td>
           </tr>
+          {{/each}}
 
           <!-- Present this email note -->
           <tr>
@@ -121,10 +124,10 @@
                 <tr>
                   <td style="padding:14px 16px;">
                     <p style="margin:0; font-size:13px; color:#1f2937; line-height:1.5;">
-                      <strong>Present this email at the event.</strong> Show the QR code above at the entrance for scanning. Keep this email safe &mdash; it is your ticket.
+                      <strong>Present this email at the event.</strong> Show the QR code{{#if multipleTickets}}s{{/if}} above at the entrance for scanning. Keep this email safe &mdash; {{#if multipleTickets}}these are your tickets{{else}}it is your ticket{{/if}}.
                     </p>
                     <p style="margin:8px 0 0; font-size:11px; color:#9ca3af; line-height:1.4;">
-                      This is a complimentary ticket issued to the named attendee. Not for resale or transfer.
+                      {{#if multipleTickets}}These are complimentary tickets{{else}}This is a complimentary ticket{{/if}} issued to the named attendee. Not for resale or transfer.
                     </p>
                   </td>
                 </tr>
