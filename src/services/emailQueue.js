@@ -66,10 +66,15 @@ async function processJob(job) {
     }
 
     const tnsPublicUrl = process.env.TNS_PUBLIC_URL || '';
+    const wpApiUrl = wp_api_url || process.env.WP_API_URL || '';
+    const wpParam = wpApiUrl ? Buffer.from(wpApiUrl).toString('base64url') : '';
+
     const ticketsWithPdf = tickets.map(t => {
       if (tnsPublicUrl) {
-        const sig = generateSignature(String(t.ticket_id));
-        t.pdfUrl = `${tnsPublicUrl}/api/ticket-pdf/${t.ticket_id}?sig=${sig}`;
+        const sigPayload = wpParam ? `${t.ticket_id}:${wpApiUrl}` : String(t.ticket_id);
+        const sig = generateSignature(sigPayload);
+        const wpQuery = wpParam ? `&wp=${wpParam}` : '';
+        t.pdfUrl = `${tnsPublicUrl}/api/ticket-pdf/${t.ticket_id}?sig=${sig}${wpQuery}`;
       }
       return t;
     });
@@ -77,8 +82,11 @@ async function processJob(job) {
     let combinedPdfUrl = '';
     if (tnsPublicUrl && tickets.length > 1) {
       const sortedIds = tickets.map(t => String(t.ticket_id)).sort();
-      const combinedSig = generateSignature(sortedIds.join(','));
-      combinedPdfUrl = `${tnsPublicUrl}/api/tickets-pdf?ids=${sortedIds.join(',')}&sig=${combinedSig}`;
+      const idsStr = sortedIds.join(',');
+      const sigPayload = wpParam ? `${idsStr}:${wpApiUrl}` : idsStr;
+      const combinedSig = generateSignature(sigPayload);
+      const wpQuery = wpParam ? `&wp=${wpParam}` : '';
+      combinedPdfUrl = `${tnsPublicUrl}/api/tickets-pdf?ids=${idsStr}&sig=${combinedSig}${wpQuery}`;
     }
 
     const html = renderCompTicketEmail({ event, tickets: ticketsWithPdf, combinedPdfUrl });

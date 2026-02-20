@@ -44,6 +44,22 @@ function measureFields(doc, fields) {
   return h;
 }
 
+/**
+ * Estimate the total page height needed for a ticket so the content
+ * (including QR code and footer) never gets clipped.
+ */
+function estimatePageHeight(ticketData) {
+  const { attendeePhone, customFields } = ticketData;
+  let fieldCount = 2; // ticket type + attendee (always present)
+  if (attendeePhone) fieldCount++;
+  if (customFields) {
+    fieldCount += customFields.filter(f => f.label && f.value).length;
+  }
+  const BASE = 500;
+  const PER_FIELD = 35;
+  return Math.max(660, BASE + fieldCount * PER_FIELD);
+}
+
 function drawField(doc, label, value, x, y, width, bold = false) {
   doc.font('Helvetica-Bold').fontSize(8).fillColor(LIGHT_MUTED);
   doc.text(label, x, y, { width });
@@ -147,8 +163,9 @@ async function renderTicketPage(doc, ticketData) {
  */
 async function generateTicketPDF(ticketData) {
   return new Promise(async (resolve, reject) => {
+    const pageHeight = estimatePageHeight(ticketData);
     const doc = new PDFDocument({
-      size: [PAGE_W, 660],
+      size: [PAGE_W, pageHeight],
       margins: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN },
       info: { Title: `Ticket - ${ticketData.event.name}`, Author: 'Tessera Tickets' },
     });
@@ -184,7 +201,8 @@ async function generateMultiTicketPDF(ticketsData) {
 
     try {
       for (let i = 0; i < ticketsData.length; i++) {
-        doc.addPage();
+        const pageHeight = estimatePageHeight(ticketsData[i]);
+        doc.addPage({ size: [PAGE_W, pageHeight] });
         await renderTicketPage(doc, ticketsData[i]);
       }
       doc.end();

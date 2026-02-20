@@ -22,11 +22,11 @@ function verifySignature(data, sig) {
   }
 }
 
-async function fetchTicketFromWP(ticketId) {
-  const wpBaseUrl = process.env.WP_API_URL;
-  if (!wpBaseUrl) throw new Error('WP API not configured');
+async function fetchTicketFromWP(ticketId, wpBaseUrl) {
+  const baseUrl = wpBaseUrl || process.env.WP_API_URL;
+  if (!baseUrl) throw new Error('WP API not configured');
 
-  const res = await fetch(`${wpBaseUrl}/tessera/v1/tns/ticket-data/${ticketId}`, {
+  const res = await fetch(`${baseUrl}/tessera/v1/tns/ticket-data/${ticketId}`, {
     headers: { 'X-TNS-Key': getSecret() },
   });
 
@@ -55,13 +55,22 @@ function ticketToRenderData(ticket) {
 router.get('/ticket-pdf/:ticketId', async (req, res) => {
   try {
     const { ticketId } = req.params;
-    const { sig } = req.query;
+    const { sig, wp } = req.query;
 
-    if (!verifySignature(ticketId, sig)) {
-      return res.status(403).json({ error: 'Invalid signature' });
+    let wpApiUrl;
+    if (wp) {
+      wpApiUrl = Buffer.from(wp, 'base64url').toString();
+      if (!verifySignature(`${ticketId}:${wpApiUrl}`, sig)) {
+        return res.status(403).json({ error: 'Invalid signature' });
+      }
+    } else {
+      if (!verifySignature(ticketId, sig)) {
+        return res.status(403).json({ error: 'Invalid signature' });
+      }
+      wpApiUrl = process.env.WP_API_URL;
     }
 
-    const ticket = await fetchTicketFromWP(ticketId);
+    const ticket = await fetchTicketFromWP(ticketId, wpApiUrl);
     const renderData = ticketToRenderData(ticket);
     const pdfBuffer = await generateTicketPDF(renderData);
 
@@ -85,21 +94,30 @@ router.get('/ticket-pdf/:ticketId', async (req, res) => {
  */
 router.get('/tickets-pdf', async (req, res) => {
   try {
-    const { ids, sig } = req.query;
+    const { ids, sig, wp } = req.query;
     if (!ids) return res.status(400).json({ error: 'Missing ids parameter' });
 
     const ticketIds = ids.split(',').map(id => id.trim()).filter(Boolean);
     if (ticketIds.length === 0) return res.status(400).json({ error: 'No ticket IDs provided' });
 
     const signedPayload = ticketIds.sort().join(',');
-    if (!verifySignature(signedPayload, sig)) {
-      return res.status(403).json({ error: 'Invalid signature' });
+    let wpApiUrl;
+    if (wp) {
+      wpApiUrl = Buffer.from(wp, 'base64url').toString();
+      if (!verifySignature(`${signedPayload}:${wpApiUrl}`, sig)) {
+        return res.status(403).json({ error: 'Invalid signature' });
+      }
+    } else {
+      if (!verifySignature(signedPayload, sig)) {
+        return res.status(403).json({ error: 'Invalid signature' });
+      }
+      wpApiUrl = process.env.WP_API_URL;
     }
 
     const ticketsData = [];
     for (const tid of ticketIds) {
       try {
-        const ticket = await fetchTicketFromWP(tid);
+        const ticket = await fetchTicketFromWP(tid, wpApiUrl);
         ticketsData.push(ticketToRenderData(ticket));
       } catch (err) {
         console.error(`[TNS] PDF: Failed to fetch ticket #${tid}:`, err.message);
