@@ -5,16 +5,18 @@ const router = Router();
 
 /**
  * POST /api/send-batch
- * Webhook receiver — called by the WordPress plugin after comp tickets are created.
+ * Webhook receiver — called by the WordPress plugin after tickets are created.
  * Accepts batch data and queues emails for delivery.
+ * Supports both comp and paid ticket types via the optional `type` field.
  */
 router.post('/send-batch', async (req, res) => {
   try {
-    const { comp_post_id, event, tickets, wp_api_url } = req.body;
+    const { comp_post_id, order_id, event, tickets, wp_api_url, type = 'comp' } = req.body;
 
-    if (!comp_post_id || !event || !Array.isArray(tickets) || tickets.length === 0) {
+    const batchId = comp_post_id || order_id;
+    if (!batchId || !event || !Array.isArray(tickets) || tickets.length === 0) {
       return res.status(400).json({
-        error: 'Missing required fields: comp_post_id, event, tickets[]',
+        error: 'Missing required fields: comp_post_id or order_id, event, tickets[]',
       });
     }
 
@@ -22,15 +24,16 @@ router.post('/send-batch', async (req, res) => {
       return res.status(400).json({ error: 'Event must include id and name' });
     }
 
-    console.log(`[TNS] Received batch #${comp_post_id}: ${tickets.length} ticket(s) for "${event.name}"${wp_api_url ? ` (callback: ${wp_api_url})` : ''}`);
+    console.log(`[TNS] Received ${type} batch #${batchId}: ${tickets.length} ticket(s) for "${event.name}"${wp_api_url ? ` (callback: ${wp_api_url})` : ''}`);
 
-    enqueueBatch({ comp_post_id, event, tickets, wp_api_url });
+    enqueueBatch({ comp_post_id, event, tickets, wp_api_url, type, order_id });
 
     res.status(202).json({
       accepted: true,
-      comp_post_id,
+      batch_id: batchId,
+      type,
       tickets_queued: tickets.length,
-      message: `${tickets.length} email(s) queued for delivery`,
+      message: `${tickets.length} ${type} email(s) queued for delivery`,
     });
   } catch (err) {
     console.error('[TNS] Error in /send-batch:', err);

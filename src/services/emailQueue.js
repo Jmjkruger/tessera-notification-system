@@ -1,7 +1,7 @@
 const { sendTicketEmail } = require('./sesClient');
 const { updateTicketEmailStatus } = require('./wpClient');
 const { generateQR } = require('./qrGenerator');
-const { renderCompTicketEmail, getLogoAttachment } = require('./templateEngine');
+const { renderCompTicketEmail, renderPaidTicketEmail, getLogoAttachment } = require('./templateEngine');
 const { generateSignature } = require('../routes/pdf');
 
 const CONCURRENCY = 3;
@@ -19,8 +19,10 @@ function getQueueStats() {
 /**
  * Group tickets by attendee_email and enqueue one job per recipient.
  * Each job contains all tickets for that email address.
+ * @param {string} [type='comp'] - 'comp' or 'paid'
+ * @param {string|number} [order_id] - WooCommerce order ID (paid tickets only)
  */
-function enqueueBatch({ comp_post_id, event, tickets, wp_api_url }) {
+function enqueueBatch({ comp_post_id, event, tickets, wp_api_url, type = 'comp', order_id }) {
   const byEmail = {};
   for (const ticket of tickets) {
     const email = ticket.attendee_email;
@@ -29,7 +31,7 @@ function enqueueBatch({ comp_post_id, event, tickets, wp_api_url }) {
   }
 
   for (const [email, recipientTickets] of Object.entries(byEmail)) {
-    queue.push({ comp_post_id, event, tickets: recipientTickets, email, wp_api_url, retries: 0 });
+    queue.push({ comp_post_id, event, tickets: recipientTickets, email, wp_api_url, type, order_id, retries: 0 });
     stats.queued++;
   }
   drainQueue();
@@ -49,8 +51,9 @@ async function drainQueue() {
 }
 
 async function processJob(job) {
-  const { comp_post_id, event, tickets, email, wp_api_url } = job;
-  const jobLabel = `${tickets.length} ticket(s) for ${email} in batch #${comp_post_id}`;
+  const { comp_post_id, event, tickets, email, wp_api_url, type = 'comp', order_id } = job;
+  const batchRef = comp_post_id || order_id || 'unknown';
+  const jobLabel = `${tickets.length} ${type} ticket(s) for ${email} in batch #${batchRef}`;
 
   try {
     const qrAttachments = [];
@@ -89,14 +92,22 @@ async function processJob(job) {
       combinedPdfUrl = `${tnsPublicUrl}/api/tickets-pdf?ids=${idsStr}&sig=${combinedSig}${wpQuery}`;
     }
 
-    const html = renderCompTicketEmail({ event, tickets: ticketsWithPdf, combinedPdfUrl });
+    const renderFn = type === 'paid' ? renderPaidTicketEmail : renderCompTicketEmail;
+    const renderArgs = { event, tickets: ticketsWithPdf, combinedPdfUrl };
+    if (type === 'paid' && order_id) {
+      renderArgs.orderNumber = `#${order_id}`;
+    }
+    const html = renderFn(renderArgs);
 
     const inlineImages = [getLogoAttachment(), ...qrAttachments];
 
     const ticketWord = tickets.length === 1 ? 'ticket' : 'tickets';
+    const subject = type === 'paid'
+      ? `Your ${ticketWord} for ${event.name}`
+      : `Your complimentary ${ticketWord} for ${event.name}`;
     await sendTicketEmail({
       to: email,
-      subject: `Your complimentary ${ticketWord} for ${event.name}`,
+      subject,
       html,
       inlineImages,
     });

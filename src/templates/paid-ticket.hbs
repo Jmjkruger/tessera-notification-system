@@ -13,14 +13,17 @@
           <tr>
             <td style="padding:8px 24px 4px;">
               <h1 style="margin:0; font-size:20px; font-weight:700; color:#1f2937; line-height:1.3;">
-                You've received {{#if multipleTickets}}complimentary tickets!{{else}}a complimentary ticket!{{/if}}
+                {{#if multipleTickets}}Your tickets are ready!{{else}}Your ticket is ready!{{/if}}
               </h1>
             </td>
           </tr>
           <tr>
             <td style="padding:4px 24px 20px;">
               <p style="margin:0; font-size:14px; color:#6b7280; line-height:1.5;">
-                You've been sent {{#if multipleTickets}}{{ticketCount}} complimentary tickets{{else}}a complimentary ticket{{/if}} to <strong style="color:#1f2937;">{{eventName}}</strong>. Your ticket details are below.
+                Thank you for your purchase! Here {{#if multipleTickets}}are your {{ticketCount}} tickets{{else}}is your ticket{{/if}} for <strong style="color:#1f2937;">{{eventName}}</strong>.
+                {{#if orderNumber}}
+                <br /><span style="font-size:12px; color:#9ca3af;">Order {{orderNumber}}</span>
+                {{/if}}
               </p>
             </td>
           </tr>
@@ -35,9 +38,6 @@
                   <td style="padding:14px 16px;">
                     <p style="margin:0; font-size:13px; color:#1f2937; line-height:1.5;">
                       <strong>Present this email at the event.</strong> Show the QR code{{#if multipleTickets}}s{{/if}} above at the entrance for scanning. Keep this email safe &mdash; {{#if multipleTickets}}these are your tickets{{else}}it is your ticket{{/if}}.
-                    </p>
-                    <p style="margin:8px 0 0; font-size:11px; color:#9ca3af; line-height:1.4;">
-                      {{#if multipleTickets}}These are complimentary tickets{{else}}This is a complimentary ticket{{/if}} issued to the named attendee. Not for resale or transfer.
                     </p>
                   </td>
                 </tr>
