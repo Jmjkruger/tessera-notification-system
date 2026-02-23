@@ -4,7 +4,7 @@ const { SESv2Client, SendEmailCommand } = require('@aws-sdk/client-sesv2');
 const HEALTH_URL = `http://localhost:${process.env.PORT || 4001}/api/health`;
 const CHECK_INTERVAL_MS = 60_000;
 const FAIL_THRESHOLD = 3; // consecutive failures before declaring "down"
-const ALERT_TO = 'jason@tessera.co.zm';
+const ALERT_TO = process.env.MONITOR_ALERT_EMAIL || 'jason@tessera.co.zm';
 const SENDER_EMAIL = process.env.SES_SENDER_EMAIL || 'notifications@tessera.co.zm';
 const SENDER_FROM = `Tessera Monitor <${SENDER_EMAIL}>`;
 

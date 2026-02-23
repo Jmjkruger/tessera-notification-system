@@ -24,9 +24,26 @@ router.post('/send-batch', async (req, res) => {
       return res.status(400).json({ error: 'Event must include id and name' });
     }
 
-    console.log(`[TNS] Received ${type} batch #${batchId}: ${tickets.length} ticket(s) for "${event.name}"${wp_api_url ? ` (callback: ${wp_api_url})` : ''}`);
+    // Validate individual tickets — filter out any without required fields
+    const validTickets = tickets.filter(t => {
+      if (!t.attendee_email || !t.barcode) {
+        console.warn(`[TNS] Skipping invalid ticket in batch #${batchId}: missing attendee_email or barcode`);
+        return false;
+      }
+      return true;
+    });
 
-    enqueueBatch({ comp_post_id, event, tickets, wp_api_url, type, order_id });
+    if (validTickets.length === 0) {
+      return res.status(400).json({ error: 'No valid tickets in batch (each ticket needs attendee_email and barcode)' });
+    }
+
+    if (validTickets.length < tickets.length) {
+      console.warn(`[TNS] Batch #${batchId}: ${tickets.length - validTickets.length} invalid tickets filtered out`);
+    }
+
+    console.log(`[TNS] Received ${type} batch #${batchId}: ${validTickets.length} ticket(s) for "${event.name}"${wp_api_url ? ` (callback: ${wp_api_url})` : ''}`);
+
+    enqueueBatch({ comp_post_id, event, tickets: validTickets, wp_api_url, type, order_id });
 
     res.status(202).json({
       accepted: true,

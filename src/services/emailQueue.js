@@ -142,4 +142,22 @@ async function processJob(job) {
   }
 }
 
-module.exports = { enqueueBatch, getQueueStats };
+/**
+ * Wait for all active workers to finish processing.
+ * Used during graceful shutdown to avoid losing in-flight emails.
+ */
+async function drainQueue() {
+  if (activeWorkers === 0) return;
+  console.log(`[TNS] Draining queue — ${activeWorkers} active workers, ${queue.length} pending...`);
+  return new Promise(resolve => {
+    const check = setInterval(() => {
+      if (activeWorkers === 0) {
+        clearInterval(check);
+        console.log(`[TNS] Queue drained. Stats: sent=${stats.sent}, failed=${stats.failed}`);
+        resolve();
+      }
+    }, 500);
+  });
+}
+
+module.exports = { enqueueBatch, getQueueStats, drainQueue };
