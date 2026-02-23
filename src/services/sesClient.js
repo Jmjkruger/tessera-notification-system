@@ -57,7 +57,7 @@ function buildRawMime({ from, to, subject, html, inlineImages }) {
  * @param {Array}  opts.inlineImages - [{ cid, base64, contentType, filename }]
  */
 async function sendTicketEmail({ to, subject, html, inlineImages = [] }) {
-  const senderName = process.env.SES_SENDER_NAME || 'Tessera Tickets';
+  const senderName = process.env.SES_SENDER_NAME || 'Tessera Notifications';
   const senderEmail = process.env.SES_SENDER_EMAIL;
 
   if (!senderEmail) {
@@ -69,7 +69,7 @@ async function sendTicketEmail({ to, subject, html, inlineImages = [] }) {
   if (inlineImages.length > 0) {
     const rawMessage = buildRawMime({ from, to, subject, html, inlineImages });
     const command = new SendEmailCommand({
-      FromEmailAddress: senderEmail,
+      FromEmailAddress: from,
       Destination: { ToAddresses: [to] },
       Content: {
         Raw: { Data: Buffer.from(rawMessage) },
