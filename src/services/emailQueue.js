@@ -145,8 +145,9 @@ async function processJob(job) {
 /**
  * Wait for all active workers to finish processing.
  * Used during graceful shutdown to avoid losing in-flight emails.
+ * NOTE: Named waitForQueueEmpty to avoid collision with the queue-processing drainQueue.
  */
-async function drainQueue() {
+async function waitForQueueEmpty() {
   if (activeWorkers === 0) return;
   console.log(`[TNS] Draining queue — ${activeWorkers} active workers, ${queue.length} pending...`);
   return new Promise(resolve => {
@@ -160,4 +161,4 @@ async function drainQueue() {
   });
 }
 
-module.exports = { enqueueBatch, getQueueStats, drainQueue };
+module.exports = { enqueueBatch, getQueueStats, drainQueue, waitForQueueEmpty };

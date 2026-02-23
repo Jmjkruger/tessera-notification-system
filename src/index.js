@@ -7,7 +7,7 @@ const { router: pdfRoutes } = require('./routes/pdf');
 const { authMiddleware } = require('./middleware/auth');
 const { startCatchupLoop } = require('./services/catchup');
 
-const { drainQueue } = require('./services/emailQueue');
+const { drainQueue, waitForQueueEmpty } = require('./services/emailQueue');
 
 const app = express();
 const PORT = process.env.PORT || 3002;
@@ -38,7 +38,7 @@ const server = app.listen(PORT, () => {
 async function shutdown(signal) {
   console.log(`[TNS] ${signal} received — shutting down gracefully...`);
   server.close();
-  await drainQueue();
+  await waitForQueueEmpty();
   process.exit(0);
 }
 
